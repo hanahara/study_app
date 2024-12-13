@@ -165,40 +165,40 @@ class ReminderManager:
 
 class HistoryManager:
     def show_history(self):
-    st.write("過去の質問と評価履歴")
-
-    # 履歴データを取得
-    history = st.session_state.get("history", [])
-    if not history:
-        st.write("履歴がまだありません")
-        return
-
-    # 並べ替えとフィルタリング用の選択肢
-    sort_option = st.radio("並べ替え:", ("評価の大きい順", "評価の小さい順"))
-    filter_option = st.slider("特定の評価でフィルタリング (0: 全て表示)", 0, 10, 0)
-
-    # 履歴の並べ替え
-    if sort_option == "評価の大きい順":
-        history = sorted(history, key=lambda x: (-x['evaluation'] if x['evaluation'] is not None else -1, x['time']))
-    elif sort_option == "評価の小さい順":
-        history = sorted(history, key=lambda x: (x['evaluation'] if x['evaluation'] is not None else 11, x['time']))
-
-    # 履歴のフィルタリング
-    if filter_option > 0:
-        history = [item for item in history if item['evaluation'] == filter_option]
-
-    # 履歴の表示
-    if history:
-        for item in history:
-            with st.container():
-                st.write(f"**質問:** {item['question']}")
-                st.write(f"**回答:** {item['response']}")
-                st.write(f"**評価:** {item['evaluation'] or '未評価'}")
-                st.write(f"**評価日時:** {item['time'].strftime('%Y-%m-%d %H:%M:%S')}")
-                st.markdown("---")
-    else:
-        st.write("該当する履歴がありません")
-
+        st.write("過去の質問と評価履歴")
+    
+        # 履歴データを取得
+        history = st.session_state.get("history", [])
+        if not history:
+            st.write("履歴がまだありません")
+            return
+    
+        # 並べ替えとフィルタリング用の選択肢
+        sort_option = st.radio("並べ替え:", ("評価の大きい順", "評価の小さい順"))
+        filter_option = st.slider("特定の評価でフィルタリング (0: 全て表示)", 0, 10, 0)
+    
+        # 履歴の並べ替え
+        if sort_option == "評価の大きい順":
+            history = sorted(history, key=lambda x: (-x['evaluation'] if x['evaluation'] is not None else -1, x['time']))
+        elif sort_option == "評価の小さい順":
+            history = sorted(history, key=lambda x: (x['evaluation'] if x['evaluation'] is not None else 11, x['time']))
+    
+        # 履歴のフィルタリング
+        if filter_option > 0:
+            history = [item for item in history if item['evaluation'] == filter_option]
+    
+        # 履歴の表示
+        if history:
+            for item in history:
+                with st.container():
+                    st.write(f"**質問:** {item['question']}")
+                    st.write(f"**回答:** {item['response']}")
+                    st.write(f"**評価:** {item['evaluation'] or '未評価'}")
+                    st.write(f"**評価日時:** {item['time'].strftime('%Y-%m-%d %H:%M:%S')}")
+                    st.markdown("---")
+        else:
+            st.write("該当する履歴がありません")
+    
 
 
 
