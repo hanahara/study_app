@@ -5,6 +5,19 @@ from langchain.schema import SystemMessage, HumanMessage, AIMessage
 import os
 import sqlite3
 
+def save_to_db(question_data):
+    conn = sqlite3.connect('questions.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS questions
+                 (question TEXT, response TEXT, evaluation INTEGER, time TIMESTAMP)''')
+    c.execute('''INSERT INTO questions (question, response, evaluation, time) VALUES (?, ?, ?, ?)''',
+              (question_data['question'], question_data['response'], question_data['evaluation'], question_data['time']))
+    conn.commit()
+    conn.close()
+
+# 呼び出し時に保存
+save_to_db(question_data)       
+
 # --- AppState Class to Manage Global States ---
 class AppState:
     def __init__(self):
@@ -248,20 +261,7 @@ def main():
         # 6. 履歴の表示
         if st.button("履歴を表示"):
             history_manager.show_history()
-
-
-def save_to_db(question_data):
-    conn = sqlite3.connect('questions.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS questions
-                 (question TEXT, response TEXT, evaluation INTEGER, time TIMESTAMP)''')
-    c.execute('''INSERT INTO questions (question, response, evaluation, time) VALUES (?, ?, ?, ?)''',
-              (question_data['question'], question_data['response'], question_data['evaluation'], question_data['time']))
-    conn.commit()
-    conn.close()
-
-# 呼び出し時に保存
-save_to_db(question_data)            
+     
 
 if __name__ == '__main__':
     main()
