@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from langchain_community.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage, AIMessage
 import os
+import sqlite3
 
 # --- AppState Class to Manage Global States ---
 class AppState:
@@ -65,7 +66,7 @@ class ChatManager:
     def display_question_answer(self, question_data):
     # 動的に表示するための空のプレースホルダーを作成
         message_placeholder = st.empty()
-
+    
         # 1週間後の指定時刻を計算
         reminder_time = self.app_state.get_reminder_time()
         if reminder_time:
@@ -73,39 +74,40 @@ class ChatManager:
                 hour=reminder_time.hour,
                 minute=reminder_time.minute,
                 second=0, microsecond=0
-            ) + timedelta(days=0)                                      #日付変更
-
+            ) + timedelta(days=0)
+    
             # 現在の時間がリマインダー時刻を過ぎているかチェック
             if datetime.now() >= reminder_datetime:
                 question_data['visible'] = True
-
-        # 質問と回答を表示
+    
+        # 質問と回答をカード形式で表示
         if question_data['visible']:
             with message_placeholder.container():
-                st.write(f"質問: {question_data['question']}")
-
-                if not question_data['response']:
-                    self.generate_response(question_data)
-
-                if question_data['response']:
-                    st.write(f"回答: {question_data['response']}")
+                col1, col2 = st.columns([1, 4])
+                with col1:
+                    st.markdown("### 質問")
+                    st.write(f"**{question_data['question']}**")
+                with col2:
+                    st.markdown("### 回答")
+                    if not question_data['response']:
+                        self.generate_response(question_data)
+                    if question_data['response']:
+                        st.write(f"**{question_data['response']}**")
                     
                     # 豆知識を表示
                     fun_fact = self.generate_fun_fact(question_data['question'])
                     st.info(f"豆知識: {fun_fact}")
-
-                if not question_data['evaluated']:
-                    self.get_evaluation(question_data)
         else:
             # 残り時間を表示
             time_remaining = reminder_datetime - datetime.now()
             days, remainder = divmod(time_remaining.total_seconds(), 86400)
             hours, remainder = divmod(remainder, 3600)
             minutes = remainder // 60
-
+    
             message_placeholder.write(
                 f"この質問と回答はあと {int(days)}日 {int(hours)}時間 {int(minutes)}分で表示されます。"
             )
+
         
 
     def generate_response(self, question_data):
@@ -163,38 +165,40 @@ class ReminderManager:
 
 class HistoryManager:
     def show_history(self):
-        st.write("過去の質問と評価履歴")
+    st.write("過去の質問と評価履歴")
 
-        # 履歴データを取得
-        history = st.session_state.get("history", [])
-        if not history:
-            st.write("履歴がまだありません")
-            return
+    # 履歴データを取得
+    history = st.session_state.get("history", [])
+    if not history:
+        st.write("履歴がまだありません")
+        return
 
-        # 並べ替えとフィルタリング用の選択肢
-        sort_option = st.radio("並べ替え:", ("評価の大きい順", "評価の小さい順"))
-        filter_option = st.slider("特定の評価でフィルタリング (0: 全て表示)", 0, 10, 0)
+    # 並べ替えとフィルタリング用の選択肢
+    sort_option = st.radio("並べ替え:", ("評価の大きい順", "評価の小さい順"))
+    filter_option = st.slider("特定の評価でフィルタリング (0: 全て表示)", 0, 10, 0)
 
-        # 履歴の並べ替え
-        if sort_option == "評価の大きい順":
-            history = sorted(history, key=lambda x: (-x['evaluation'] if x['evaluation'] is not None else -1, x['time']))
-        elif sort_option == "評価の小さい順":
-            history = sorted(history, key=lambda x: (x['evaluation'] if x['evaluation'] is not None else 11, x['time']))
+    # 履歴の並べ替え
+    if sort_option == "評価の大きい順":
+        history = sorted(history, key=lambda x: (-x['evaluation'] if x['evaluation'] is not None else -1, x['time']))
+    elif sort_option == "評価の小さい順":
+        history = sorted(history, key=lambda x: (x['evaluation'] if x['evaluation'] is not None else 11, x['time']))
 
-        # 履歴のフィルタリング
-        if filter_option > 0:
-            history = [item for item in history if item['evaluation'] == filter_option]
+    # 履歴のフィルタリング
+    if filter_option > 0:
+        history = [item for item in history if item['evaluation'] == filter_option]
 
-        # 履歴の表示
-        if history:
-            for item in history:
-                with st.container():
-                    st.write(f"質問: {item['question']}")
-                    st.write(f"回答: {item['response']}")
-                    st.write(f"評価: {item['evaluation'] or '未評価'}")
-                    st.markdown("---")
-        else:
-            st.write("該当する履歴がありません")
+    # 履歴の表示
+    if history:
+        for item in history:
+            with st.container():
+                st.write(f"**質問:** {item['question']}")
+                st.write(f"**回答:** {item['response']}")
+                st.write(f"**評価:** {item['evaluation'] or '未評価'}")
+                st.write(f"**評価日時:** {item['time'].strftime('%Y-%m-%d %H:%M:%S')}")
+                st.markdown("---")
+    else:
+        st.write("該当する履歴がありません")
+
 
 
 
@@ -244,6 +248,20 @@ def main():
         # 6. 履歴の表示
         if st.button("履歴を表示"):
             history_manager.show_history()
+
+
+def save_to_db(question_data):
+    conn = sqlite3.connect('questions.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS questions
+                 (question TEXT, response TEXT, evaluation INTEGER, time TIMESTAMP)''')
+    c.execute('''INSERT INTO questions (question, response, evaluation, time) VALUES (?, ?, ?, ?)''',
+              (question_data['question'], question_data['response'], question_data['evaluation'], question_data['time']))
+    conn.commit()
+    conn.close()
+
+# 呼び出し時に保存
+save_to_db(question_data)            
 
 if __name__ == '__main__':
     main()
