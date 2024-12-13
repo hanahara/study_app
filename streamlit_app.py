@@ -16,7 +16,7 @@ def save_to_db(question_data):
     conn.close()
 
 # 呼び出し時に保存
-save_to_db(question_data)       
+    save_to_db(question_data)       
 
 # --- AppState Class to Manage Global States ---
 class AppState:
