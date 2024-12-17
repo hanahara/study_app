@@ -5,6 +5,9 @@ from langchain.schema import SystemMessage, HumanMessage, AIMessage
 import os
 import sqlite3
 
+openai_api_key = os.getenv("OPENAI_API_KEY")
+llm = ChatOpenAI(temperature=0, api_key=openai_api_key)
+
 import requests
 
 response = requests.get('https://study01.streamlit.app')
