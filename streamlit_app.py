@@ -1,9 +1,6 @@
 import streamlit as st
 from datetime import datetime , timedelta
 import pytz
-
-tz = pytz.timezone("Asia/Tokyo")
-now = datetime.now(tz)
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage, AIMessage
 import os
