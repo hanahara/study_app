@@ -5,6 +5,10 @@ from langchain.schema import SystemMessage, HumanMessage, AIMessage
 import os
 import sqlite3
 
+import requests
+
+response = requests.get('https://study01.streamlit.app')
+
 
 def save_to_db(question_data):
     conn = sqlite3.connect('questions.db')
