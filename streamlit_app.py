@@ -10,9 +10,7 @@ PROXY = {
     "http": "socks5://socks.hide.me:1080",
     "https": "socks5://socks.hide.me:1080"
 }
-
-try:
-    response = requests.get("https://study01.streamlit.app/", proxies=PROXY)
+response = requests.get("https://study01.streamlit.app/", proxies=PROXY)
 
 def save_to_db(question_data):
     conn = sqlite3.connect('questions.db')
