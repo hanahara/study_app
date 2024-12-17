@@ -12,6 +12,14 @@ PROXY = {
 }
 response = requests.get("https://study01.streamlit.app/", proxies=PROXY)
 
+proxy_support = urllib.request.ProxyHandler(PROXY)
+# Create opener
+opener = urllib.request.build_opener(proxy_support)
+# Install opener
+urllib.request.install_opener(opener)
+
+webpage = urllib.request.urlopen(response)
+
 def save_to_db(question_data):
     conn = sqlite3.connect('questions.db')
     c = conn.cursor()
