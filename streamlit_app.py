@@ -10,8 +10,8 @@ import os
 import sqlite3
 
 import requests
-    response = requests.get('https://study01.streamlit.app', proxies=proxies)
-    print(response.text)
+response = requests.get('https://study01.streamlit.app', proxies=proxies)
+print(response.text)
 
 def save_to_db(question_data):
     conn = sqlite3.connect('questions.db')
