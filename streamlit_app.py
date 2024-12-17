@@ -7,7 +7,7 @@ import os
 import sqlite3
 
 def proxies:
-    prox
+    
     #"https//:socks5://socks.hide.me:1080"
 
 
