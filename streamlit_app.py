@@ -5,19 +5,6 @@ from langchain.schema import SystemMessage, HumanMessage, AIMessage
 import os
 import sqlite3
 
-import requests
-
-# プロキシの設定
-proxies = {
-    'https': 'https//socks.hide.me:1080' # プロキシサーバーのアドレスとポート番号
-}
-
-
-# プロキシを使ってGETリクエストを送る
-response = requests.get('https://study01.streamlit.app', proxies = proxies)
-
-print(response.text)  # レスポンスを表示
-
 
 def save_to_db(question_data):
     conn = sqlite3.connect('questions.db')
