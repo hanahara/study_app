@@ -10,17 +10,8 @@ import os
 import sqlite3
 
 import requests
-
-# プロキシの設定
-proxies = {
-    "https": "socks5://socks.hide.me:1080"
-}
-
-# リクエストを送る
-response = requests.get('https://study01.streamlit.app', proxies=proxies)
-
-# レスポンスを確認
-print(response.text)
+    response = requests.get('https://study01.streamlit.app', proxies=proxies)
+    print(response.text)
 
 def save_to_db(question_data):
     conn = sqlite3.connect('questions.db')
