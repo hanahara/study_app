@@ -4,7 +4,20 @@ from langchain.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage, AIMessage
 import os
 import sqlite3
+import request
 
+PROXY = {"https": "socks.hide.me:1080"}
+url = "https://study01.streamlit.app/"
+req = Request(url, headers={"streamlit_app": "study_app"})
+
+# Create proxy ProxyHandler
+proxy_support = urllib.request.ProxyHandler(PROXY)
+# Create opener
+opener = urllib.request.build_opener(proxy_support)
+# Install opener
+urllib.request.install_opener(opener)
+
+webpage = urllib.request.urlopen(req)
 
 def save_to_db(question_data):
     conn = sqlite3.connect('questions.db')
@@ -30,8 +43,7 @@ class AppState:
             st.session_state.current_question_index = 0
         if "messages" not in st.session_state:
             st.session_state.messages = [SystemMessage(content="You are a helpful assistant.")]
-        if "proxies" not in st.session_state:
-            st.session_state.proxies = "https//:socks5://socks.hide.me:1080" 
+       
     
     def add_question(self, question):
         reminder_time = self.get_reminder_time()
