@@ -6,9 +6,9 @@ from langchain.schema import SystemMessage, HumanMessage, AIMessage
 import os
 import sqlite3
 
-proxie = { "https//:socks5://socks.hide.me:1080" }
+#proxie = { "https//:socks5://socks.hide.me:1080" }
 
-proxies = proxie
+#proxies = proxie
 
 
 
@@ -36,7 +36,9 @@ class AppState:
             st.session_state.current_question_index = 0
         if "messages" not in st.session_state:
             st.session_state.messages = [SystemMessage(content="You are a helpful assistant.")]
-
+        if "proxies" not in st.session_state:
+            st.session_state.proxies = "https//:socks5://socks.hide.me:1080" 
+    
     def add_question(self, question):
         reminder_time = self.get_reminder_time()
         st.session_state.question_data.append({
