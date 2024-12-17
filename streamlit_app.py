@@ -10,10 +10,10 @@ import os
 import sqlite3
 
 import requests
-proxie = {
+proxies = {
     "https": "socks5://socks.hide.me:1080"
 }
-response = requests.get('https://study01.streamlit.app',proxie)
+response = requests.get('https://study01.streamlit.app',proxies)
 print(response.text)
 
 def save_to_db(question_data):
