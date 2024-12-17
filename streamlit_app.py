@@ -8,7 +8,7 @@ import sqlite3
 import requests
 
 proxies = {
-    'http': '*.local,169.254/16,'
+    'http': '*.local,169.254/16',
     'https': '*.local,169.254/16'
 }
 
