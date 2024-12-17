@@ -6,9 +6,11 @@ from langchain.schema import SystemMessage, HumanMessage, AIMessage
 import os
 import sqlite3
 
-#proxie = { "https//:socks5://socks.hide.me:1080" }
+def proxies:
+    prox
+    #"https//:socks5://socks.hide.me:1080"
 
-#proxies = proxie
+
 
 
 
