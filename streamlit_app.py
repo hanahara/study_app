@@ -10,7 +10,7 @@ import requests
 # プロキシの設定
 proxies = {
     'https': 'public-vpn-123.opengw.net:219.100.37.89',  # プロキシサーバーのアドレスとポート番号
-
+}
 
 
 # プロキシを使ってGETリクエストを送る
