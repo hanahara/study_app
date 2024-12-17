@@ -8,8 +8,8 @@ import sqlite3
 import requests
 
 proxies = {
-    'http': 'http://your.proxy:port',
-    'https': 'https://your.proxy:port'
+    'http': '*.local,169.254/16,'
+    'https': '*.local,169.254/16'
 }
 
 response = requests.get('https://example.com', proxies=proxies)
