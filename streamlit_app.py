@@ -5,13 +5,19 @@ from langchain.schema import SystemMessage, HumanMessage, AIMessage
 import os
 import sqlite3
 
-openai_api_key = os.getenv("OPENAI_API_KEY")
-llm = ChatOpenAI(temperature=0, api_key=openai_api_key)
-
 import requests
 
-response = requests.get('https://study01.streamlit.app')
+# プロキシの設定
+proxies = {
+    "http": "http://socks.hide.me:1080",
+    "https": "https://socks.hide.me:1080"
+}
 
+# リクエストを送る
+response = requests.get('https://study01.streamlit.app', proxies=proxies)
+
+# レスポンスを確認
+print(response.text)
 
 def save_to_db(question_data):
     conn = sqlite3.connect('questions.db')
