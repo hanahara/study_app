@@ -9,8 +9,8 @@ import requests
 
 # プロキシの設定
 proxies = {
-    "http": "http://socks.hide.me:1080",
-    "https": "https://socks.hide.me:1080"
+    "http": "socks5://socks.hide.me:1080",
+    "https": "socks5://socks.hide.me:1080"
 }
 
 # リクエストを送る
