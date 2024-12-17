@@ -9,7 +9,7 @@ import requests
 
 # プロキシの設定
 proxies = {
-    'https': 'socks.hide.me:1080' # プロキシサーバーのアドレスとポート番号
+    'https': 'https//socks.hide.me:1080' # プロキシサーバーのアドレスとポート番号
 }
 
 
