@@ -10,7 +10,7 @@ import os
 import sqlite3
 
 import requests
-response = requests.get('https://study01.streamlit.app', proxies=socks.hide.me)
+response = requests.get('https://study01.streamlit.app')
 print(response.text)
 
 def save_to_db(question_data):
