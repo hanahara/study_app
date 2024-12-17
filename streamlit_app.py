@@ -5,6 +5,15 @@ from langchain.schema import SystemMessage, HumanMessage, AIMessage
 import os
 import sqlite3
 
+import requests
+
+proxies = {
+    'http': 'http://your.proxy:port',
+    'https': 'https://your.proxy:port'
+}
+
+response = requests.get('https://example.com', proxies=proxies)
+
 def save_to_db(question_data):
     conn = sqlite3.connect('questions.db')
     c = conn.cursor()
