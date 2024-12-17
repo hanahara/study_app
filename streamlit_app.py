@@ -6,18 +6,13 @@ import os
 import sqlite3
 import request
 
-PROXY = {"https": "socks.hide.me:1080"}
-url = "https://study01.streamlit.app/"
-req = Request(url, headers={"streamlit_app": "study_app"})
+PROXY = {
+    "http": "socks5://socks.hide.me:1080",
+    "https": "socks5://socks.hide.me:1080"
+}
 
-# Create proxy ProxyHandler
-proxy_support = urllib.request.ProxyHandler(PROXY)
-# Create opener
-opener = urllib.request.build_opener(proxy_support)
-# Install opener
-urllib.request.install_opener(opener)
-
-webpage = urllib.request.urlopen(req)
+try:
+    response = requests.get("https://study01.streamlit.app/", proxies=PROXY)
 
 def save_to_db(question_data):
     conn = sqlite3.connect('questions.db')
