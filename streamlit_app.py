@@ -7,8 +7,7 @@ import sqlite3
 import requests
 
 PROXY = {
-    "http": "socks5://socks.hide.me:1080",
-    "https": "socks5://socks.hide.me:1080"
+    "https": "socks5://45.144.196.94:1080"
 }
 response = requests.get("https://study01.streamlit.app/", proxies=PROXY)
 
