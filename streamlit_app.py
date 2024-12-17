@@ -9,7 +9,10 @@ from langchain.schema import SystemMessage, HumanMessage, AIMessage
 import os
 import sqlite3
 
-import requests
+proxies = {
+    "https": "socks5h://socks.hide.me:1080"
+}
+
 
 
 def save_to_db(question_data):
