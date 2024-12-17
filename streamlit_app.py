@@ -10,9 +10,6 @@ import os
 import sqlite3
 
 import requests
-proxie = {
-    "https": "socks5://socks.hide.me:1080"
-}
 
 
 def save_to_db(question_data):
