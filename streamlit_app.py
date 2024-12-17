@@ -14,7 +14,7 @@ proxies = {
 
 
 # プロキシを使ってGETリクエストを送る
-response = requests.get('https://study01.streamlit.app', proxies = proxies)
+response = requests.get('study01.streamlit.app', proxies = proxies)
 
 print(response.text)  # レスポンスを表示
 
