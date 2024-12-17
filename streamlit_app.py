@@ -9,12 +9,12 @@ import requests
 
 # プロキシの設定
 proxies = {
-    'https': 'https://public-vpn-39.opengw.net:1195' # プロキシサーバーのアドレスとポート番号
+    'https': 'https://public-vpn-39.opengw.net:443' # プロキシサーバーのアドレスとポート番号
 }
 
 
 # プロキシを使ってGETリクエストを送る
-response = requests.get('https://study01.streamlit.app/', proxies = proxies)
+response = requests.get('https://study01.streamlit.app', proxies = proxies)
 
 print(response.text)  # レスポンスを表示
 
