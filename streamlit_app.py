@@ -9,7 +9,7 @@ import requests
 
 # プロキシの設定
 proxies = {
-    'https': 'https://public-vpn-39.opengw.net:443' # プロキシサーバーのアドレスとポート番号
+    'https': 'https://public-vpn-39.opengw.net:1195' # プロキシサーバーのアドレスとポート番号
 }
 
 
