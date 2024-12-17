@@ -13,7 +13,7 @@ import requests
 proxies = {
     "https": "socks5://socks.hide.me:1080"
 }
-response = requests.get('https://study01.streamlit.app',proxies)
+response = requests.get('https://study01.streamlit.app',proxies="socks5://socks.hide.me:1080")
 print(response.text)
 
 def save_to_db(question_data):
