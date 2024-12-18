@@ -4,7 +4,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage, AIMessage
 import os
 import sqlite3
-import requests
+#import requests
 
 #PROXY = {
 #    "https": "socks5://socks.hide.me:1080"
