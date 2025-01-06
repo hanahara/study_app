@@ -13,7 +13,7 @@ import sqlite3
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
     st.error("OpenAI APIキーが設定されていません。環境変数を確認してください。")
-    return
+        return
 llm = ChatOpenAI(temperature=0, api_key=openai_api_key)
 
 
