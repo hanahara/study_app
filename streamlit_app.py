@@ -10,11 +10,6 @@ import sqlite3
 #    "https": "socks5://socks.hide.me:1080"
 #}
 #response = requests.get("https://study01.streamlit.app/", proxies = PROXY)
-openai_api_key = os.getenv("OPENAI_API_KEY")
-if not openai_api_key:
-     st.error("OpenAI APIキーが設定されていません。環境変数を確認してください。")
-     return
-llm = ChatOpenAI(temperature=0, api_key=openai_api_key)
 
 
 
@@ -38,12 +33,6 @@ class AppState:
             st.session_state.current_question_index = 0
         if "messages" not in st.session_state:
             st.session_state.messages = [SystemMessage(content="You are a helpful assistant.")]
-             
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        if not openai_api_key:
-             st.error("OpenAI APIキーが設定されていません。環境変数を確認してください。")
-             return
-        llm = ChatOpenAI(temperature=0, api_key=openai_api_key)
 
     
     def add_question(self, question):
@@ -265,7 +254,11 @@ def main():
 
 
     openai_api_key = os.getenv("OPENAI_API_KEY")
+    if not openai_api_key:
+          st.error("OpenAI APIキーが設定されていません。環境変数を確認してください。")
+          return
     llm = ChatOpenAI(temperature=0, api_key=openai_api_key)
+
 
     app_state = AppState()
     chat_manager = ChatManager(app_state, llm)
