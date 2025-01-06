@@ -11,10 +11,10 @@ import sqlite3
 #}
 #response = requests.get("https://study01.streamlit.app/", proxies = PROXY)
 openai_api_key = os.getenv("OPENAI_API_KEY")
-    if not openai_api_key:
-        st.error("OpenAI APIキーが設定されていません。環境変数を確認してください。")
-        return
-    llm = ChatOpenAI(temperature=0, api_key=openai_api_key)
+if not openai_api_key:
+     st.error("OpenAI APIキーが設定されていません。環境変数を確認してください。")
+     return
+llm = ChatOpenAI(temperature=0, api_key=openai_api_key)
 
 
 
