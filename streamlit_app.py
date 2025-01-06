@@ -41,23 +41,23 @@ class AppState:
        
     
     def add_question(self, question):
-    reminder_time = self.get_reminder_time()
-    question_data = {
-        "question": question,
-        "time": datetime.now(),
-        "reminder_time": reminder_time,
-        "response": None,
-        "visible": False,
-        "evaluated": False,
-        "evaluation": None
-    }
-    st.session_state.question_data.append(question_data)
-    save_to_db({
-        "question": question,
-        "response": None,
-        "evaluation": None,
-        "time": datetime.now()
-    })
+        reminder_time = self.get_reminder_time()
+        question_data = {
+            "question": question,
+            "time": datetime.now(),
+            "reminder_time": reminder_time,
+            "response": None,
+            "visible": False,
+            "evaluated": False,
+            "evaluation": None
+        }
+        st.session_state.question_data.append(question_data)
+        save_to_db({
+            "question": question,
+            "response": None,
+            "evaluation": None,
+            "time": datetime.now()
+        })
 
     def set_reminder_time(self, reminder_time):
         st.session_state.reminder_time = reminder_time
