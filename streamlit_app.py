@@ -275,7 +275,7 @@ def main():
         # 2. 質問の入力
     user_input = st.text_input("質問を入力してください:", "", key="question_input", autocomplete="off")
     if st.button("質問を送信"):
-         if user_input.strip():  # 空白チェック
+        if user_input.strip():  # 空白チェック
             app_state.add_question(user_input)
             st.success("質問を送信しました！")
         else:
