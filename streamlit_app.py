@@ -10,21 +10,22 @@ import sqlite3
 #    "https": "socks5://socks.hide.me:1080"
 #}
 #response = requests.get("https://study01.streamlit.app/", proxies = PROXY)
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if not openai_api_key:
+    st.error("OpenAI APIキーが設定されていません。環境変数を確認してください。")
+    return
+llm = ChatOpenAI(temperature=0, api_key=openai_api_key)
 
 
 
 def save_to_db(question_data):
-    conn = sqlite3.connect('questions.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS questions
-                 (question TEXT, response TEXT, evaluation INTEGER, time TIMESTAMP)''')
-    c.execute('''INSERT INTO questions (question, response, evaluation, time) VALUES (?, ?, ?, ?)''',
-              (question_data['question'], question_data['response'], question_data['evaluation'], question_data['time']))
-    conn.commit()
-    conn.close()
-
-# 呼び出し時に保存
-    save_to_db(question_data)       
+    with sqlite3.connect('questions.db') as conn:
+        c = conn.cursor()
+        c.execute('''CREATE TABLE IF NOT EXISTS questions
+                     (question TEXT, response TEXT, evaluation INTEGER, time TIMESTAMP)''')
+        c.execute('''INSERT INTO questions (question, response, evaluation, time) VALUES (?, ?, ?, ?)''',
+                  (question_data['question'], question_data['response'], question_data['evaluation'], question_data['time']))
+        conn.commit()
 
 # --- AppState Class to Manage Global States ---
 class AppState:
@@ -40,16 +41,23 @@ class AppState:
        
     
     def add_question(self, question):
-        reminder_time = self.get_reminder_time()
-        st.session_state.question_data.append({
-            "question": question,
-            "time": datetime.now(),
-            "reminder_time": reminder_time,
-            "response": None,
-            "visible": False,
-            "evaluated": False,
-            "evaluation": None
-        })
+    reminder_time = self.get_reminder_time()
+    question_data = {
+        "question": question,
+        "time": datetime.now(),
+        "reminder_time": reminder_time,
+        "response": None,
+        "visible": False,
+        "evaluated": False,
+        "evaluation": None
+    }
+    st.session_state.question_data.append(question_data)
+    save_to_db({
+        "question": question,
+        "response": None,
+        "evaluation": None,
+        "time": datetime.now()
+    })
 
     def set_reminder_time(self, reminder_time):
         st.session_state.reminder_time = reminder_time
@@ -61,6 +69,7 @@ class AppState:
         if "history" not in st.session_state:
             st.session_state.history = []  # historyもここで初期化
         st.session_state.history.append(question_data)
+        save_to_db(question_data)       
 
 # --- ChatManager Class for Handling Q&A ---
 class ChatManager:
@@ -142,12 +151,26 @@ class ChatManager:
             st.success("回答が届きました！")
 
     def get_evaluation(self, question_data):
-        evaluation = st.slider("この回答を評価してください (1〜10):", 1, 10)
-        if st.button("評価を送信"):
-            question_data['evaluated'] = True
-            question_data['evaluation'] = evaluation
-            self.app_state.save_to_history(question_data)
-            st.success("評価が送信されました！")
+    evaluation = st.slider("この回答を評価してください (1〜10):", 1, 10)
+    if st.button("評価を送信"):
+        question_data['evaluated'] = True
+        question_data['evaluation'] = evaluation
+        save_to_db({
+            "question": question_data['question'],
+            "response": question_data['response'],
+            "evaluation": evaluation,
+            "time": datetime.now()
+        })
+        self.app_state.save_to_history(question_data)
+        st.success("評価が送信されました！")
+    elif not question_data['evaluated']:
+        save_to_db({
+            "question": question_data['question'],
+            "response": question_data['response'],
+            "evaluation": None,
+            "time": datetime.now()
+        })
+
     
             
     def next_question(self):
@@ -187,40 +210,36 @@ class ReminderManager:
 
 class HistoryManager:
     def show_history(self):
-        st.write("過去の質問と評価履歴")
+    st.write("過去の質問と評価履歴")
     
-        # 履歴データを取得
-        history = st.session_state.get("history", [])
-        if not history:
-            st.write("履歴がまだありません")
-            return
-    
-        # 並べ替えとフィルタリング用の選択肢
-        sort_option = st.radio("並べ替え:", ("評価の大きい順", "評価の小さい順"))
-        filter_option = st.slider("特定の評価でフィルタリング (0: 全て表示)", 0, 10, 0)
-    
-        # 履歴の並べ替え
-        if sort_option == "評価の大きい順":
-            history = sorted(history, key=lambda x: (-x['evaluation'] if x['evaluation'] is not None else -1, x['time']))
-        elif sort_option == "評価の小さい順":
-            history = sorted(history, key=lambda x: (x['evaluation'] if x['evaluation'] is not None else 11, x['time']))
-    
-        # 履歴のフィルタリング
-        if filter_option > 0:
-            history = [item for item in history if item['evaluation'] == filter_option]
-    
-        # 履歴の表示
-        if history:
-            for item in history:
-                with st.container():
-                    st.write(f"**質問:** {item['question']}")
-                    st.write(f"**回答:** {item['response']}")
-                    st.write(f"**評価:** {item['evaluation'] or '未評価'}")
-                    st.write(f"**評価日時:** {item['time'].strftime('%Y-%m-%d %H:%M:%S')}")
-                    st.markdown("---")
-        else:
-            st.write("該当する履歴がありません")
-    
+    history = st.session_state.get("history", [])
+    if not history:
+        st.write("履歴がまだありません")
+        return
+
+    # 並べ替えとフィルタリング
+    sort_option = st.radio("並べ替え:", ("評価の大きい順", "評価の小さい順"))
+    filter_option = st.slider("特定の評価でフィルタリング (0: 全て表示)", 0, 10, 0)
+
+    if sort_option == "評価の大きい順":
+        history = sorted(history, key=lambda x: (-x['evaluation'] if x['evaluation'] is not None else -1, x['time']))
+    elif sort_option == "評価の小さい順":
+        history = sorted(history, key=lambda x: (x['evaluation'] if x['evaluation'] is not None else 11, x['time']))
+
+    if filter_option > 0:
+        history = [item for item in history if item['evaluation'] == filter_option]
+
+    if history:
+        for item in history:
+            with st.container():
+                st.write(f"**質問:** {item['question']}")
+                st.write(f"**回答:** {item['response']}")
+                st.write(f"**評価:** {item['evaluation'] or '未評価'}")
+                st.write(f"**日時:** {item['time'].strftime('%Y-%m-%d %H:%M:%S')}")
+                st.markdown("---")
+    else:
+        st.write("該当する履歴がありません")
+
 
 
 
@@ -254,9 +273,14 @@ def main():
             reminder_manager.set_reminder()
 
         # 2. 質問の入力
-        user_input = st.text_input("質問を入力してください:", "", key="question_input", autocomplete="off")
-        if st.button("質問を送信"):
+    user_input = st.text_input("質問を入力してください:", "", key="question_input", autocomplete="off")
+    if st.button("質問を送信"):
+         if user_input.strip():  # 空白チェック
             app_state.add_question(user_input)
+            st.success("質問を送信しました！")
+        else:
+            st.warning("質問を入力してください。")
+
 
         # 3. 回答を待っている質問の数を表示
         pending_count = chat_manager.count_pending_questions()
