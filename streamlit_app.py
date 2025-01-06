@@ -151,25 +151,25 @@ class ChatManager:
             st.success("回答が届きました！")
 
     def get_evaluation(self, question_data):
-    evaluation = st.slider("この回答を評価してください (1〜10):", 1, 10)
-    if st.button("評価を送信"):
-        question_data['evaluated'] = True
-        question_data['evaluation'] = evaluation
-        save_to_db({
-            "question": question_data['question'],
-            "response": question_data['response'],
-            "evaluation": evaluation,
-            "time": datetime.now()
-        })
-        self.app_state.save_to_history(question_data)
-        st.success("評価が送信されました！")
-    elif not question_data['evaluated']:
-        save_to_db({
-            "question": question_data['question'],
-            "response": question_data['response'],
-            "evaluation": None,
-            "time": datetime.now()
-        })
+        evaluation = st.slider("この回答を評価してください (1〜10):", 1, 10)
+        if st.button("評価を送信"):
+            question_data['evaluated'] = True
+            question_data['evaluation'] = evaluation
+            save_to_db({
+                "question": question_data['question'],
+                "response": question_data['response'],
+                "evaluation": evaluation,
+                "time": datetime.now()
+            })
+            self.app_state.save_to_history(question_data)
+            st.success("評価が送信されました！")
+        elif not question_data['evaluated']:
+            save_to_db({
+                "question": question_data['question'],
+                "response": question_data['response'],
+                "evaluation": None,
+                "time": datetime.now()
+            })
 
     
             
