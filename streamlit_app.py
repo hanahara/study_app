@@ -1,301 +1,193 @@
 import streamlit as st
-from datetime import datetime , timedelta
+from datetime import datetime, timedelta
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage, AIMessage
 import os
-import sqlite3
-#import requests
-
-#PROXY = {
-#    "https": "socks5://socks.hide.me:1080"
-#}
-#response = requests.get("https://study01.streamlit.app/", proxies = PROXY)
+import random
 
 
+def initialize_state():
+    """セッションステートの初期化"""
+    if "all_questions" not in st.session_state:
+        st.session_state.all_questions = []
+    if "current_question" not in st.session_state:
+        st.session_state.current_question = None
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
 
-def save_to_db(question_data):
-    with sqlite3.connect('questions.db') as conn:
-        c = conn.cursor()
-        c.execute('''CREATE TABLE IF NOT EXISTS questions
-                     (question TEXT, response TEXT, evaluation INTEGER, time TIMESTAMP)''')
-        c.execute('''INSERT INTO questions (question, response, evaluation, time) VALUES (?, ?, ?, ?)''',
-                  (question_data['question'], question_data['response'], question_data['evaluation'], question_data['time']))
-        conn.commit()
 
-# --- AppState Class to Manage Global States ---
-class AppState:
-    def __init__(self):
-        if "question_data" not in st.session_state:
-            st.session_state.question_data = []  # 質問、回答、評価をまとめて保存
-        if "reminder_time" not in st.session_state:
-            st.session_state.reminder_time = None
-        if "current_question_index" not in st.session_state:
-            st.session_state.current_question_index = 0
-        if "messages" not in st.session_state:
-            st.session_state.messages = [SystemMessage(content="You are a helpful assistant.")]
+def add_question(question):
+    question_id = len(st.session_state.all_questions) + 1
+    question_data = {
+        "id": question_id,
+        "question": question,
+        "timer": 60,  # 1分 (60秒)
+        "time": datetime.now(),
+        "response": None,
+        "fun_fact": None,
+        "visible": False,
+        "evaluated": False,
+        "evaluation": None
+    }
+    st.session_state.all_questions.append(question_data)
 
-    
-    def add_question(self, question):
-        reminder_time = self.get_reminder_time()
-        question_data = {
-            "question": question,
-            "time": datetime.now(),
-            "reminder_time": reminder_time,
-            "response": None,
-            "visible": False,
-            "evaluated": False,
-            "evaluation": None
-        }
-        st.session_state.question_data.append(question_data)
-        save_to_db({
-            "question": question,
-            "response": None,
-            "evaluation": None,
-            "time": datetime.now()
-        })
 
-    def set_reminder_time(self, reminder_time):
-        st.session_state.reminder_time = reminder_time
 
-    def get_reminder_time(self):
-        return st.session_state.reminder_time
 
-    def save_to_history(self, question_data):
-        if "history" not in st.session_state:
-            st.session_state.history = []  # historyもここで初期化
-        st.session_state.history.append(question_data)
-        save_to_db(question_data)       
+
+
+
+
+
+
+
+
 
 # --- ChatManager Class for Handling Q&A ---
 class ChatManager:
-    def __init__(self, app_state, llm):
-        self.app_state = app_state
+    def __init__(self, llm):
         self.llm = llm
 
-    def generate_fun_fact(self, question):
-        """質問内容に基づいて豆知識を生成する"""
-        # 例: 簡易的に質問内容に関連したテキストを生成する
-        st.session_state.messages.append(HumanMessage(content=f"質問: {question} に関する興味深い豆知識を教えてください。"))
-        response = self.llm(st.session_state.messages)
-        st.session_state.messages.append(AIMessage(content=response.content))
-        return response.content    
-
-    def count_pending_questions(self):
-        return sum(1 for q in st.session_state.question_data if not q['response'] and not q['visible'])
-
-    def show_current_question(self):
-        question_data = st.session_state.question_data
-        if question_data and len(question_data) > st.session_state.current_question_index:
-            current_question = question_data[st.session_state.current_question_index]
-            self.display_question_answer(current_question)
-
-    def display_question_answer(self, question_data):
-    # 動的に表示するための空のプレースホルダーを作成
-        message_placeholder = st.empty()
-    
-        # 1週間後の指定時刻を計算
-        reminder_time = self.app_state.get_reminder_time()
-        if reminder_time:
-            reminder_datetime = question_data['time'].replace(
-                hour=reminder_time.hour,
-                minute=reminder_time.minute,
-                second=0, microsecond=0
-            ) + timedelta(days=0)
-    
-            # 現在の時間がリマインダー時刻を過ぎているかチェック
-            if datetime.now() >= reminder_datetime:
-                question_data['visible'] = True
-    
-        # 質問と回答をカード形式で表示
-        if question_data['visible']:
-            with message_placeholder.container():
-                col1, col2 = st.columns([1, 4])
-                with col1:
-                    st.markdown("### 質問")
-                    st.write(f"**{question_data['question']}**")
-                with col2:
-                    st.markdown("### 回答")
-                    if not question_data['response']:
-                        self.generate_response(question_data)
-                    if question_data['response']:
-                        st.write(f"**{question_data['response']}**")
-                    
-                    # 豆知識を表示
-                    fun_fact = self.generate_fun_fact(question_data['question'])
-                    st.info(f"豆知識: {fun_fact}")
-        else:
-            # 残り時間を表示
-            time_remaining = reminder_datetime - datetime.now()
-            days, remainder = divmod(time_remaining.total_seconds(), 86400)
-            hours, remainder = divmod(remainder, 3600)
-            minutes = remainder // 60
-    
-            message_placeholder.write(
-                f"この質問と回答はあと {int(days)}日 {int(hours)}時間 {int(minutes)}分で表示されます。"
-            )
-
-        
-
     def generate_response(self, question_data):
-        with st.spinner("回答を待っています..."):
-            # 質問をLLMに渡して回答を生成
-            st.session_state.messages.append(HumanMessage(content=question_data['question']))
-            response = self.llm(st.session_state.messages)
-            question_data['response'] = response.content  # 回答をデータに保存
-            st.session_state.messages.append(AIMessage(content=response.content))
-            st.success("回答が届きました！")
+        # 回答がまだ生成されていない場合のみ生成
+        if question_data["response"] is None:
+            st.session_state.messages.append(HumanMessage(content=question_data["question"]))
+            with st.spinner("回答を待っています..."):
+                response = self.llm(st.session_state.messages)
+                question_data["response"] = response.content  # 回答をデータに保存
+                st.session_state.messages.append(AIMessage(content=response.content))
+                st.success("回答が届きました！")
 
-    def get_evaluation(self, question_data):
-        evaluation = st.slider("この回答を評価してください (1〜10):", 1, 10)
-        if st.button("評価を送信"):
-            question_data['evaluated'] = True
-            question_data['evaluation'] = evaluation
-            save_to_db({
-                "question": question_data['question'],
-                "response": question_data['response'],
-                "evaluation": evaluation,
-                "time": datetime.now()
-            })
-            self.app_state.save_to_history(question_data)
-            st.success("評価が送信されました！")
-        elif not question_data['evaluated']:
-            save_to_db({
-                "question": question_data['question'],
-                "response": question_data['response'],
-                "evaluation": None,
-                "time": datetime.now()
-            })
+    def generate_fun_fact(self, question_data):
+        # 豆知識がまだ生成されていない場合のみ生成
+        if question_data["fun_fact"] is None:
+            content = f"質問: {question_data['question']} に関する興味深い豆知識を教えてください。"
+            st.session_state.messages.append(HumanMessage(content))
+            fun_fact = self.llm(st.session_state.messages)
+            question_data["fun_fact"] = fun_fact.content
+            st.session_state.messages.append(AIMessage(content=fun_fact.content))
 
-    
-            
-    def next_question(self):
-        if st.session_state.current_question_index < len(st.session_state.question_data) - 1:
-            st.session_state.current_question_index += 1
+    def display_random_response(self, question_data):
+        now = datetime.now()
 
-        
-
-# --- ReminderManager Class for Reminder Time ---
-class ReminderManager:
-    def __init__(self, app_state):
-        self.app_state = app_state
-
-    def set_reminder(self):
-        st.write("回答を返す時刻を設定してください")
-        
-        # 選択肢を定義（6通りの時刻）
-        time_options = [
-            datetime.strptime("07:00", "%H:%M").time(),
-            datetime.strptime("10:00", "%H:%M").time(),
-            datetime.strptime("12:00", "%H:%M").time(),
-            datetime.strptime("15:00", "%H:%M").time(),
-            datetime.strptime("19:00", "%H:%M").time(),
-            datetime.strptime("22:00", "%H:%M").time()
-        ]
-        
-        # セレクトボックスで選択
-        selected_time = st.selectbox("回答を返す時間を選んでください", time_options, format_func=lambda t: t.strftime("%H:%M"))
-        
-        if st.button("時刻を設定"):
-            self.app_state.set_reminder_time(selected_time)
-            st.success(f"回答を返す時刻を {selected_time.strftime('%H:%M')} に設定しました")
-
-    def get_reminder(self):
-        return self.app_state.get_reminder_time()
-
-
-class HistoryManager:
-    def show_history(self):
-        st.write("過去の質問と評価履歴")
-        
-        history = st.session_state.get("history", [])
-        if not history:
-            st.write("履歴がまだありません")
+        # 時間が経過していない場合は、次の回答までの時間を表示
+        timer = question_data["timer"]
+        if (now - question_data["time"]).seconds < timer:
+            next_update = question_data["time"] + timedelta(seconds=timer)
+            remaining_time = next_update - datetime.now()
+            minutes, seconds = divmod(remaining_time.seconds, 60)
+            st.info(f"次の回答まで: {minutes}分 {seconds}秒")
             return
 
-    # 並べ替えとフィルタリング
-        sort_option = st.radio("並べ替え:", ("評価の大きい順", "評価の小さい順"))
-        filter_option = st.slider("特定の評価でフィルタリング (0: 全て表示)", 0, 10, 0)
-    
-        if sort_option == "評価の大きい順":
-            history = sorted(history, key=lambda x: (-x['evaluation'] if x['evaluation'] is not None else -1, x['time']))
-        elif sort_option == "評価の小さい順":
-            history = sorted(history, key=lambda x: (x['evaluation'] if x['evaluation'] is not None else 11, x['time']))
-    
-        if filter_option > 0:
-            history = [item for item in history if item['evaluation'] == filter_option]
-    
-        if history:
-            for item in history:
-                with st.container():
-                    st.write(f"**質問:** {item['question']}")
-                    st.write(f"**回答:** {item['response']}")
-                    st.write(f"**評価:** {item['evaluation'] or '未評価'}")
-                    st.write(f"**日時:** {item['time'].strftime('%Y-%m-%d %H:%M:%S')}")
-                    st.markdown("---")
-        else:
-            st.write("該当する履歴がありません")
+        # 回答と豆知識を生成
+        self.generate_response(question_data)
+        self.generate_fun_fact(question_data)
+
+        # 回答を表示
+        st.write(f"### 質問 {question_data['id']}: {question_data['question']}")
+        st.write(f"**回答:** {question_data['response']}")
+        st.write(f"**豆知識:** {question_data['fun_fact']}")
+
+        # 評価の処理
+        self.get_evaluation(question_data)
+
+    def get_evaluation(self, question_data):
+        if not question_data["evaluated"]:
+            evaluation = st.slider(f"質問 {question_data['id']} の評価", min_value=1, max_value=10, value=5)
+            if st.button("評価を送信"):
+                question_data["evaluated"] = True
+                question_data["evaluation"] = evaluation
+                st.success(f"質問 {question_data['id']} の評価が送信されました！")
+
+
+
+
+
+
+
+
+
+
+
+
+# --- HistoryManager Class ---
+class HistoryManager:
+    def show_history(self):
+        # 評価済みの質問のみ表示
+        questions = [q for q in st.session_state.all_questions if q["evaluated"]]
+        for q in questions:
+            st.write(f"**質問 {q['id']}**: {q['question']}")
+            st.write(f"- 回答: {q['response'] or '未回答'}")
+            st.write(f"- 豆知識: {q['fun_fact'] or '未回答'}")
+            st.write(f"- 評価: {q['evaluation']}")
+            st.write(f"- 質問日時: {(q['time']).strftime('%Y-%m-%d %H:%M')}")
+            st.markdown("---")
+
+
+
+
+
+
+
+
 
 
 
 
 # --- Main App Logic ---
 def main():
-
-    # ページ選択のためのラジオボタン
     page = st.sidebar.radio("ページを選択", ("質問送信", "回答評価", "履歴"))
-
-    st.title("質問アプリ")
-    if page == "質問送信":
-        st.subheader('質問送信')
-    elif page == "回答評価":
-        st.subheader('回答評価')
-    else :
-        st.subheader('履歴')
-
 
     openai_api_key = os.getenv("OPENAI_API_KEY")
     if not openai_api_key:
-          st.error("OpenAI APIキーが設定されていません。環境変数を確認してください。")
-          return
+        st.error("OpenAI APIキーが設定されていません。環境変数を確認してください。")
+        return
+
     llm = ChatOpenAI(temperature=0, api_key=openai_api_key)
-
-
-    app_state = AppState()
-    chat_manager = ChatManager(app_state, llm)
-    reminder_manager = ReminderManager(app_state)
+    
+    chat_manager = ChatManager(llm)
     history_manager = HistoryManager()
 
-    
+    initialize_state()
+
     if page == "質問送信":
-        # 1. 時刻設定（最初に設定）
-        if not app_state.get_reminder_time():
-            reminder_manager.set_reminder()
+        st.subheader('質問送信')
+        user_input = st.text_input("質問を入力してください:", "", key="question_input", autocomplete="off")
+        
+        if st.button("質問を送信"):
+            if user_input.strip():  # 空白入力を防ぐ
+                add_question(user_input)
+                st.success(f"質問 '{user_input}' が送信されました。")
+                user_input = ""  # 入力欄をリセット
+            else:
+                st.warning("質問を入力してください。")
 
-        # 2. 質問の入力
-    user_input = st.text_input("質問を入力してください:", "", key="question_input", autocomplete="off")
-    if st.button("質問を送信"):
-        if user_input.strip():  # 空白チェック
-            app_state.add_question(user_input)
-            st.success("質問を送信しました！")
-        else:
-            st.warning("質問を入力してください。")
+        # 未抽選の質問の数
+        pending_count = len([q for q in st.session_state.all_questions if not q['evaluated']])
+        st.write(f"未抽選の質問の数: {pending_count}")
 
-
-        # 3. 回答を待っている質問の数を表示
-        pending_count = chat_manager.count_pending_questions()
-        st.write(f"回答を待っている質問の数: {pending_count}")
+        # 質問の抽選を開始
+        if st.button("質問の抽選を開始"):
+            if pending_count > 0 and st.session_state.current_question is None:  # 前回の評価が終わっていない場合は抽選不可
+                next_question = random.choice([q for q in st.session_state.all_questions if not q['evaluated']])
+                st.session_state.current_question = next_question
+                st.success(f"質問 '{next_question['question']}' が抽選されました。")
+            else:
+                st.write("評価されていない質問がまだあります。")
 
     elif page == "回答評価":
-        # 4. 現在の質問と回答を表示（1つだけ）
-        chat_manager.show_current_question()
+        st.subheader('回答評価')
+        if st.session_state.current_question:
+            chat_manager.display_random_response(st.session_state.current_question)
+        else:
+            st.warning("質問が選ばれていません。質問送信ページで質問を送信してください。")
 
     elif page == "履歴":
-        # 6. 履歴の表示
-        if st.button("履歴を表示"):
-            history_manager.show_history()
-     
+        st.subheader('履歴')
+        history_manager.show_history()
 
 if __name__ == '__main__':
     main()
+
 
 # streamlit run /Users/hb21a088/Desktop/python_lesson/my_python/main.py
